@@ -1,0 +1,12 @@
+### Open postings
+GET {{host}}/api/public/riverbend/postings?lang=fr
+
+### Feeds
+GET {{host}}/api/public/riverbend/feed.json
+
+### Health
+GET {{host}}/api/health
+
+### Processor todo list (API key)
+GET {{host}}/api/queries/notifications-to-send?limit=5
+X-API-Key: {{apiKey}}

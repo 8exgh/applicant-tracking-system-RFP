@@ -1,0 +1,37 @@
+### Staff sign-in
+POST {{host}}/api/commands/staff-login
+Content-Type: application/json
+
+{ "email": "priya@riverbend.example", "password": "…" }
+
+### Who am I
+GET {{host}}/api/queries/me
+Authorization: Bearer {{staffToken}}
+
+### List processes
+GET {{host}}/api/queries/processes
+Authorization: Bearer {{staffToken}}
+
+### Create a process
+POST {{host}}/api/commands/create-process
+Authorization: Bearer {{staffToken}}
+Content-Type: application/json
+Idempotency-Key: create-planner-1
+
+{ "title": { "en": "Planner", "fr": "Urbaniste" }, "hiringManager": "<userId>", "hrAdvisor": "<userId>", "location": "Riverbend, AB" }
+
+### Publish with optimistic concurrency
+POST {{host}}/api/commands/publish-posting
+Authorization: Bearer {{staffToken}}
+Content-Type: application/json
+If-Match: 12
+
+{ "processId": "<processId>", "closeAt": "2027-01-25 23:59" }
+
+### Timeline
+GET {{host}}/api/queries/timeline?processId=<processId>&category=screening
+Authorization: Bearer {{staffToken}}
+
+### Staffing file export
+GET {{host}}/api/queries/staffing-file?processId=<processId>
+Authorization: Bearer {{staffToken}}

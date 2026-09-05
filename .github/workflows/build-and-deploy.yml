@@ -1,0 +1,155 @@
+# Test → build both images → push to ghcr.io → ask the devops repo to deploy
+# to the OVH runner (Server16). Image names are fixed lowercase (the repo
+# name has capitals, which ghcr rejects). The devops side listens for
+# repository_dispatch type "ats-deploy" (devops/.github/workflows/deploy-ats.yml).
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository_owner }}/ats-backend
+  PROCESSOR_IMAGE: ${{ github.repository_owner }}/ats-processor
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ats
+          POSTGRES_PASSWORD: ats
+          POSTGRES_DB: ats
+        ports: ['5439:5432']
+        options: >-
+          --health-cmd "pg_isready -U ats -d ats"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: App typecheck, domain and application scenarios (real PostgreSQL)
+        working-directory: nextjs-app
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - name: Processor unit tests
+        working-directory: background-processor
+        run: |
+          npm ci
+          npm test
+      - name: Secrets never committed
+        run: |
+          if grep -rIE "(AKIA[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----|ghp_[A-Za-z0-9]{36})" --exclude-dir=node_modules --exclude-dir=.git . ; then
+            echo "Secret pattern found"; exit 1; fi
+
+  build-backend:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Record build time
+        id: buildinfo
+        run: echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+      - name: Extract metadata (Backend)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./nextjs-app
+          file: ./nextjs-app/Dockerfile
+          push: true
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ steps.buildinfo.outputs.time }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+  build-processor:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Record build time
+        id: buildinfo
+        run: echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+      - name: Extract metadata (Processor)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROCESSOR_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Build and push Processor image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./background-processor
+          file: ./background-processor/Dockerfile
+          push: true
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ steps.buildinfo.outputs.time }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=processor
+          cache-to: type=gha,mode=max,scope=processor
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-processor]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger deployment on the OVH runner
+        run: |
+          curl -f -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository_owner }}/devops/dispatches \
+            -d '{
+              "event_type": "ats-deploy",
+              "client_payload": {
+                "app": "ats",
+                "backend_image": "${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest",
+                "processor_image": "${{ env.REGISTRY }}/${{ env.PROCESSOR_IMAGE }}:latest"
+              }
+            }'

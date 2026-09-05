@@ -1,0 +1,26 @@
+{
+  "name": "ats-background-processor",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "nodemailer": "^7.0.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.1",
+    "@types/nodemailer": "^7.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
+    "typescript": "^5.9.3"
+  }
+}
