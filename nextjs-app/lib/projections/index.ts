@@ -356,6 +356,9 @@ const orgDirectory: Projector = {
       case 'UserRoleRevoked':
         await tx.query("update users set roles = coalesce((select jsonb_agg(x) from jsonb_array_elements(roles) x where x <> to_jsonb($2::text)), '[]'::jsonb) where id = $1", [p.userId, p.role]);
         break;
+      case 'UserLanguageChanged':
+        await tx.query('update users set language = $2 where id = $1', [p.userId, p.language]);
+        break;
       case 'UserDeactivated':
         await tx.query("update users set status = 'Deactivated' where id = $1", [p.userId]);
         await tx.query('update sessions set revoked_at = $2 where subject_id = $1 and revoked_at is null', [p.userId, at(e)]);

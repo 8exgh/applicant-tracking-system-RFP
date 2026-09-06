@@ -91,6 +91,22 @@ Candidates start from the careers page and sign in with magic links (no password
 CAPTCHA). With `EMAIL_PROVIDER=log` the processor prints message ids only; set
 `ATS_EXPOSE_MAGIC_LINKS=1` in development to receive the magic link in the API response.
 
+## Bilingual interface (en-CA / fr-CA)
+
+Every surface is available in both official languages. Public and candidate pages
+are addressed by locale (`/en/<org>/jobs`, `/fr/<org>/emplois`) with `<html lang>`
+and hreflang links. The staff and platform interfaces read from a typed Canadian
+French catalog (`nextjs-app/lib/i18n/staff.ts`, OQLF terminology: courriel,
+affichage, présélection, comité d’évaluation, gestionnaire d’embauche) and a language
+switch in the shell. That switch is a profile preference: it records
+`UserLanguageChanged`, so the interface, the staff member's notifications and CSV
+exports all follow the same setting. Content authored by staff (titles, criteria,
+stage names, posters, templates) is stored as `{en, fr}` maps, shown in the viewer's
+language and always edited side by side; required languages gate publishing and
+template activation. Dates use `Intl` (`fr-CA` / `en-CA`) with the organization's time
+zone abbreviation. A professional review of the French catalog is still an open item
+in the specification.
+
 ## Tests
 
 ```bash

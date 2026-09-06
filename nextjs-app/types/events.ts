@@ -24,7 +24,7 @@ export interface DecidedEvent<TPayload = Record<string, unknown>> {
 
 export type OrganizationEventType =
   | 'OrganizationCreated' | 'OrganizationSettingsUpdated' | 'BrandingUpdated' | 'FeatureFlagChanged'
-  | 'UserInvited' | 'UserActivated' | 'UserRoleAssigned' | 'UserRoleRevoked' | 'UserDeactivated'
+  | 'UserInvited' | 'UserActivated' | 'UserRoleAssigned' | 'UserRoleRevoked' | 'UserDeactivated' | 'UserLanguageChanged'
   | 'StageTemplateUpdated' | 'SessionsRevoked' | 'BreakGlassOpened' | 'RetentionRuleDefined';
 
 export type HiringProcessEventType =

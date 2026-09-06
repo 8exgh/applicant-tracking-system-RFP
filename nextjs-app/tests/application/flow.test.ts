@@ -121,6 +121,15 @@ describe('F05/F06 Process lifecycle and posting', () => {
     expect(pub.body.find((x: any) => x.processId === p.processId).status).toBe('Posted');
   });
 
+  it('staff notifications use the staff member\'s profile language, and the preference can change', async () => {
+    const q = await sql("select lang, body_enc from notification_queue where tenant_id = $1 and template_key = 'approval_decided' and recipient_ref = $2 order by queued_at desc limit 1", [rb.tenantId, rb.users.marc.userId]);
+    expect(q[0].lang).toBe('fr');
+    await ok(command('set-my-language', { language: 'en' }, { token: rb.users.marc.token }));
+    expect(await eventTypes(`org-${rb.tenantId}`)).toContain('UserLanguageChanged');
+    expect((await ok(query('me', {}, { token: rb.users.marc.token }))).language).toBe('en');
+    await ok(command('set-my-language', { language: 'fr' }, { token: rb.users.marc.token }));
+  });
+
   it('optimistic concurrency returns 412 with the current version', async () => {
     const p = await developerProcess(rb, { publish: false });
     const detail = await ok(query('process', { processId: p.processId }, { token: rb.users.priya.token }));

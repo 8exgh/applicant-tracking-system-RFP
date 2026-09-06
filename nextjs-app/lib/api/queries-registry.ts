@@ -97,7 +97,10 @@ export const queries: Record<string, Q> = {
       await accessLog(tx, { tenantId: staff.tenantId, actorType: 'staff', actorId: staff.userId, resource: 'hires_export', subjectId: processId, purpose: 'export' });
       return out;
     });
-    return new NextResponse(reports.csv(rows, ['name', 'position', 'start_date', 'hired_at', 'reference']), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="hires.csv"' } });
+    const fr = p(ctx, 'lang') === 'fr';
+    const headers = fr ? ['nom', 'poste', 'date_entree', 'date_embauche', 'reference'] : ['name', 'position', 'start_date', 'hired_at', 'reference'];
+    const localized = rows.map(r => Object.fromEntries(Object.values(r).map((v, i) => [headers[i], v])));
+    return new NextResponse(reports.csv(localized, headers), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="hires.csv"' } });
   },
 
   // ---- exports ----

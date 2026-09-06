@@ -5,7 +5,7 @@ import { streamIds } from '@/types/events';
 import { LanguageSetting, Locale, Stage, StaffRole } from '@/types/shared';
 import {
   decideCreateOrganization, decideUpdateSettings, decideUpdateBranding, decideInviteUser, decideActivateUser, decideAssignRole, decideRevokeRole,
-  decideDeactivateUser, decideSetFeatureFlag, decideUpdateStageTemplate, Branding, OrgSettings, replayOrganization
+  decideDeactivateUser, decideSetFeatureFlag, decideUpdateStageTemplate, decideChangeUserLanguage, Branding, OrgSettings, replayOrganization
 } from '@/lib/domain/organization';
 import { decideSaveTemplate, decideActivateTemplate, evolveTemplate, initialTemplateState, TemplateKey, TEMPLATE_KEYS } from '@/lib/domain/notification';
 import { DomainError } from '@/lib/domain/errors';
@@ -113,6 +113,13 @@ export async function deactivateUser(env: CommandEnv, cmd: { userId: string }): 
     const org = await loadOrganization(tx, env.tenantId);
     await append(streamIds.org(env.tenantId), org.version, decideDeactivateUser(org, { userId: cmd.userId, actorUserId: env.actor.id }));
     await revokeSessionsForSubject(tx, cmd.userId);
+  });
+}
+
+export async function changeMyLanguage(env: CommandEnv, cmd: { language: Locale }): Promise<void> {
+  await executeCommand(env, async (tx, append) => {
+    const org = await loadOrganization(tx, env.tenantId);
+    await append(streamIds.org(env.tenantId), org.version, decideChangeUserLanguage(org, { userId: env.actor.id, language: cmd.language }));
   });
 }
 

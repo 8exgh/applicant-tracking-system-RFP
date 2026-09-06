@@ -2,10 +2,12 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { staffApi, setStaffToken, errorMessage } from '@/lib/ui/client-api';
+import { staffApi, setStaffToken } from '@/lib/ui/client-api';
 import { ErrorSummary, Field } from '@/components/ui';
+import { useStaffI18n, LanguageToggle, I18n } from '@/components/staff/Shell';
 
-function LoginForm() {
+function LoginForm({ i18n }: { i18n: I18n }) {
+  const { t } = i18n;
   const router = useRouter();
   const sp = useSearchParams();
   const [email, setEmail] = useState('');
@@ -14,8 +16,8 @@ function LoginForm() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const errs = [];
-    if (!email) errs.push({ id: 'email', message: 'Email is required' });
-    if (!password) errs.push({ id: 'password', message: 'Password is required' });
+    if (!email) errs.push({ id: 'email', message: t('login.email_required') });
+    if (!password) errs.push({ id: 'password', message: t('login.password_required') });
     setErrors(errs);
     if (errs.length) return;
     try {
@@ -24,27 +26,28 @@ function LoginForm() {
       router.replace(sp.get('next') || '/staff');
     } catch (err) {
       const e = err as { error?: string };
-      setErrors([{ id: 'email', message: e.error === 'rate_limited' ? 'Too many attempts. Try again in 15 minutes.' : 'Incorrect email or password.' }]);
+      setErrors([{ id: 'email', message: e.error === 'rate_limited' ? t('login.rate_limited') : t('login.failed') }]);
     }
   }
   return (
     <form onSubmit={submit} noValidate className="max-w-sm">
-      <ErrorSummary title="There is a problem" errors={errors} />
-      <Field id="email" label="Email" required error={errors.find(x => x.id === 'email')?.message}><input id="email" type="email" autoComplete="username" className="input" value={email} onChange={e => setEmail(e.target.value)} /></Field>
-      <Field id="password" label="Password" required error={errors.find(x => x.id === 'password')?.message}><input id="password" type="password" autoComplete="current-password" className="input" value={password} onChange={e => setPassword(e.target.value)} /></Field>
-      <button type="submit" className="btn-primary">Sign in</button>
-      <p className="mt-4 text-sm"><a href="/platform">Platform operator</a></p>
+      <ErrorSummary title={t('problem')} errors={errors} />
+      <Field id="email" label={t('login.email')} required error={errors.find(x => x.id === 'email')?.message}><input id="email" type="email" autoComplete="username" className="input" value={email} onChange={e => setEmail(e.target.value)} /></Field>
+      <Field id="password" label={t('login.password')} required error={errors.find(x => x.id === 'password')?.message}><input id="password" type="password" autoComplete="current-password" className="input" value={password} onChange={e => setPassword(e.target.value)} /></Field>
+      <button type="submit" className="btn-primary">{t('login.submit')}</button>
+      <p className="mt-4 text-sm"><a href="/platform">{t('login.platform')}</a></p>
     </form>
   );
 }
 
 export default function Login() {
+  const i18n = useStaffI18n();
   return (
     <>
-      <a href="#main" className="skip-link">Skip to main content</a>
+      <a href="#main" className="skip-link">{i18n.t('skip')}</a>
       <main id="main" className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-4">Staff sign-in</h1>
-        <Suspense fallback={null}><LoginForm /></Suspense>
+        <div className="flex justify-between items-start"><h1 className="text-2xl font-bold mb-4">{i18n.t('login.title')}</h1><LanguageToggle i18n={i18n} /></div>
+        <Suspense fallback={null}><LoginForm i18n={i18n} /></Suspense>
       </main>
     </>
   );

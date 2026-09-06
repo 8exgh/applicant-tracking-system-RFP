@@ -62,11 +62,13 @@ async function toCandidate(tx: Tx, append: ReturnType<typeof makeAppender>, ctx:
   });
 }
 
-async function toStaff(tx: Tx, append: ReturnType<typeof makeAppender>, ctx: Ctx, event: StoredEvent, templateKey: QueueParams['templateKey'], userIds: string[], extra: Record<string, string | undefined> = {}): Promise<void> {
+type Extra = Record<string, string | undefined> | ((locale: Locale) => Record<string, string | undefined>);
+
+async function toStaff(tx: Tx, append: ReturnType<typeof makeAppender>, ctx: Ctx, event: StoredEvent, templateKey: QueueParams['templateKey'], userIds: string[], extra: Extra = {}): Promise<void> {
   for (const userId of Array.from(new Set(userIds.filter(Boolean)))) {
     const user = ctx.org.users[userId];
     const locale: Locale = user?.language ?? 'en';
-    const values = await processValues(tx, ctx, locale, { link: `${baseUrl()}/staff/processes/${ctx.process.id}`, ...extra });
+    const values = await processValues(tx, ctx, locale, { link: `${baseUrl()}/staff/processes/${ctx.process.id}`, ...(typeof extra === 'function' ? extra(locale) : extra) });
     await queueNotification(tx, append, {
       tenantId: event.tenantId, templateKey, recipient: { kind: 'staff', userId }, values,
       causation: { eventType: event.type, eventId: event.metadata.eventId }, processId: ctx.process.id,
@@ -97,10 +99,10 @@ async function react(tx: Tx, event: StoredEvent, append: ReturnType<typeof makeA
         break;
       }
       case 'ProcessApproved':
-        await toStaff(tx, append, ctx, event, 'approval_decided', [process.hiringManagerId, process.hrAdvisorId], { reason: `Approved${p.comment ? `: ${p.comment}` : ''}` });
+        await toStaff(tx, append, ctx, event, 'approval_decided', [process.hiringManagerId, process.hrAdvisorId], locale => ({ reason: `${locale === 'fr' ? 'Approuvé' : 'Approved'}${p.comment ? ` : ${p.comment}` : ''}` }));
         break;
       case 'ProcessApprovalRejected':
-        await toStaff(tx, append, ctx, event, 'approval_decided', [process.hiringManagerId], { reason: `Rejected: ${p.reason}` });
+        await toStaff(tx, append, ctx, event, 'approval_decided', [process.hiringManagerId], locale => ({ reason: `${locale === 'fr' ? 'Refusé' : 'Rejected'} : ${p.reason}` }));
         break;
       case 'ClosingDateExtended':
         for (const a of await applicantsOf(tx, tenantId, processId, ['Draft', 'Submitted', 'Active'])) await toCandidate(tx, append, ctx, event, 'closing_date_extended', a.candidate_id, a.id);

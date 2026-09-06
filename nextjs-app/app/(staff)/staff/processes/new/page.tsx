@@ -2,15 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shell, langMapInput, Status } from '@/components/staff/Shell';
+import { Shell, langMapInput, Status, useI18n, Me } from '@/components/staff/Shell';
 import { staffApi, errorMessage } from '@/lib/ui/client-api';
 import { Field } from '@/components/ui';
 
 export default function NewProcess() {
-  return <Shell title="New hiring process">{me => <Form me={me} />}</Shell>;
+  return <Shell title="new.title">{me => <Form me={me} />}</Shell>;
 }
 
-function Form({ me }: { me: import('@/components/staff/Shell').Me }) {
+function Form({ me }: { me: Me }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [title, setTitle] = useState<Record<string, string>>({});
   const [hm, setHm] = useState(me.users.find(u => u.roles.includes('hiring_manager'))?.userId ?? me.userId);
@@ -24,11 +25,11 @@ function Form({ me }: { me: import('@/components/staff/Shell').Me }) {
   const active = me.users.filter(u => u.status === 'Active');
   return (
     <form onSubmit={submit} className="max-w-xl">
-      {langMapInput(title, setTitle, 'title', 'Title', me.org.languages)}
-      <Field id="hm" label="Hiring manager"><select id="hm" className="input" value={hm} onChange={e => setHm(e.target.value)}>{active.map(u => <option key={u.userId} value={u.userId}>{u.displayName}</option>)}</select></Field>
-      <Field id="hr" label="HR advisor"><select id="hr" className="input" value={hr} onChange={e => setHr(e.target.value)}>{active.map(u => <option key={u.userId} value={u.userId}>{u.displayName}</option>)}</select></Field>
-      <Field id="location" label="Location"><input id="location" className="input" value={location} onChange={e => setLocation(e.target.value)} /></Field>
-      <button type="submit" className="btn-primary">Create draft</button>
+      {langMapInput(title, setTitle, 'title', t('new.name'), me.org.languages)}
+      <Field id="hm" label={t('new.hm')}><select id="hm" className="input" value={hm} onChange={e => setHm(e.target.value)}>{active.map(u => <option key={u.userId} value={u.userId}>{u.displayName}</option>)}</select></Field>
+      <Field id="hr" label={t('new.hr')}><select id="hr" className="input" value={hr} onChange={e => setHr(e.target.value)}>{active.map(u => <option key={u.userId} value={u.userId}>{u.displayName}</option>)}</select></Field>
+      <Field id="location" label={t('new.location')}><input id="location" className="input" value={location} onChange={e => setLocation(e.target.value)} /></Field>
+      <button type="submit" className="btn-primary">{t('new.create')}</button>
       <Status message={status} />
     </form>
   );

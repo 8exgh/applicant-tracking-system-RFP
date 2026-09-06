@@ -109,6 +109,8 @@ export function evolveOrganization(state: OrganizationState, event: ReplayEvent)
     }
     case 'UserDeactivated':
       return state.users[p.userId] ? { ...next, users: { ...state.users, [p.userId]: { ...state.users[p.userId], status: 'Deactivated' } } } : next;
+    case 'UserLanguageChanged':
+      return state.users[p.userId] ? { ...next, users: { ...state.users, [p.userId]: { ...state.users[p.userId], language: p.language } } } : next;
     default:
       return next;
   }
@@ -206,6 +208,15 @@ export function decideDeactivateUser(state: OrganizationState, cmd: { userId: st
   if (cmd.actorUserId && cmd.actorUserId === cmd.userId) throw new DomainError('cannot_deactivate_self');
   if (u.status === 'Deactivated') return [];
   return [{ type: 'UserDeactivated', payload: { userId: cmd.userId } }];
+}
+
+// A staff member's language preference drives the interface and their notifications (F16, F25)
+export function decideChangeUserLanguage(state: OrganizationState, cmd: { userId: string; language: Locale }): DecidedEvent[] {
+  const u = state.users[cmd.userId];
+  if (!u) throw new DomainError('user_not_found', 'User not found', undefined, 404);
+  if (cmd.language !== 'en' && cmd.language !== 'fr') throw new DomainError('language_unsupported');
+  if (u.language === cmd.language) return [];
+  return [{ type: 'UserLanguageChanged', payload: { userId: cmd.userId, language: cmd.language } }];
 }
 
 export function decideSetFeatureFlag(state: OrganizationState, cmd: { flag: string; enabled: boolean }): DecidedEvent[] {
