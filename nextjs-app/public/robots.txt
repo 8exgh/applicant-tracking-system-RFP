@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /staff
+Disallow: /platform
+Disallow: /api/
+Disallow: /en/me
+Disallow: /fr/me
