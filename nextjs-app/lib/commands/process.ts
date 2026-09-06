@@ -128,17 +128,23 @@ export async function releaseScreeningResults(env: CommandEnv, processId: string
   });
 }
 
-export async function publishInterviewSlots(env: CommandEnv, processId: string, cmd: { slots: Array<{ startsAt: string; endsAt: string; boardUserIds: string[] }> } & Expected): Promise<{ slotIds: string[] }> {
+export interface SlotRange { start: string; end: string; minutes: number; bufferMinutes: number; boardUserIds: string[]; }
+
+// Ranges arrive as wall-clock times in the organization's zone; they are
+// converted to instants before slots are cut (never parsed in server-local time).
+export async function publishInterviewSlots(env: CommandEnv, processId: string, cmd: { ranges: SlotRange[] } & Expected): Promise<{ slotIds: string[] }> {
   return executeCommand(env, async (tx, append) => {
     const l = await load(tx, env, processId);
-    const slots = cmd.slots.map(s => ({ slotId: randomUUID(), startsAt: toInstant(s.startsAt, l.org.timeZone).toISOString(), endsAt: toInstant(s.endsAt, l.org.timeZone).toISOString(), boardUserIds: s.boardUserIds }));
+    const instants = cmd.ranges.map(r => ({ ...r, start: toInstant(r.start, l.org.timeZone).toISOString(), end: toInstant(r.end, l.org.timeZone).toISOString() }));
+    const slots = expandSlotRanges(instants).map(s => ({ slotId: randomUUID(), ...s }));
+    if (!slots.length) throw new DomainError('slot_invalid', 'No slots fit the ranges', undefined, 400);
     await append(streamIds.process(processId), expected(l.version, cmd), decidePublishSlots(l.state, { slots }));
     return { slotIds: slots.map(s => s.slotId) };
   });
 }
 
-// Generates 45-minute style slots from ranges (F12): {date, from, to, minutes, bufferMinutes}
-export function expandSlotRanges(ranges: Array<{ start: string; end: string; minutes: number; bufferMinutes: number; boardUserIds: string[] }>): Array<{ startsAt: string; endsAt: string; boardUserIds: string[] }> {
+// Cuts slots of `minutes` with `bufferMinutes` between them from ISO instant ranges (F12)
+export function expandSlotRanges(ranges: SlotRange[]): Array<{ startsAt: string; endsAt: string; boardUserIds: string[] }> {
   const out: Array<{ startsAt: string; endsAt: string; boardUserIds: string[] }> = [];
   for (const r of ranges) {
     let cursor = new Date(r.start).getTime();

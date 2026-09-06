@@ -9,9 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "migrate": "node scripts/migrate.js",
-    "test": "vitest run",
-    "test:domain": "vitest run tests/domain",
-    "test:application": "vitest run tests/application"
+    "test": "TZ=UTC vitest run",
+    "test:domain": "TZ=UTC vitest run tests/domain",
+    "test:application": "TZ=UTC vitest run tests/application"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

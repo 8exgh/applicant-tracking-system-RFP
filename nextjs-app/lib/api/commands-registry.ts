@@ -148,9 +148,7 @@ export const commands: Record<string, CommandDef<any>> = {
   'release-screening-results': def(withVersion({ processId: zUuid }), async ctx => { const staff = await staffOnProcess(ctx, 'application.screen'); return proc.releaseScreeningResults(staffEnv(staff), ctx.body.processId, ev(ctx)); }),
   'publish-interview-slots': def(withVersion({ processId: zUuid, ranges: z.array(z.object({ start: z.string(), end: z.string(), minutes: z.number().int().min(5).max(480), bufferMinutes: z.number().int().min(0).max(120), boardUserIds: z.array(zUuid).min(1) }).strict()).min(1) }), async ctx => {
     const staff = await staffOnProcess(ctx, 'interview.schedule');
-    const slots = proc.expandSlotRanges(ctx.body.ranges);
-    if (!slots.length) throw new DomainError('slot_invalid', 'No slots fit the ranges', undefined, 400);
-    return proc.publishInterviewSlots(staffEnv(staff), ctx.body.processId, { slots, ...ev(ctx) });
+    return proc.publishInterviewSlots(staffEnv(staff), ctx.body.processId, { ranges: ctx.body.ranges, ...ev(ctx) });
   }),
 
   // ---- applications: candidate ----
