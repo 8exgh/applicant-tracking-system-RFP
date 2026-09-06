@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { staffApi, setStaffToken } from '@/lib/ui/client-api';
 import { ErrorSummary, Field } from '@/components/ui';
+import { Attribution } from '@/components/Attribution';
 import { useStaffI18n, LanguageToggle, I18n } from '@/components/staff/Shell';
 
 function LoginForm({ i18n }: { i18n: I18n }) {
@@ -49,6 +50,7 @@ export default function Login() {
         <div className="flex justify-between items-start"><h1 className="text-2xl font-bold mb-4">{i18n.t('login.title')}</h1><LanguageToggle i18n={i18n} /></div>
         <Suspense fallback={null}><LoginForm i18n={i18n} /></Suspense>
       </main>
+      <footer className="max-w-7xl mx-auto px-4 py-6"><Attribution lang={i18n.lang} /></footer>
     </>
   );
 }

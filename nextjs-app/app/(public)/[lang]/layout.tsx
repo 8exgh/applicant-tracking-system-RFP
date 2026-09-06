@@ -4,6 +4,7 @@ import { isLocale } from '@/lib/domain/lang';
 import { t } from '@/lib/i18n/messages';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import { Attribution } from '@/components/Attribution';
 
 export const metadata: Metadata = { title: '8Examples ATS', description: 'Bilingual, accessible applicant tracking for Canadian public-interest employers' };
 
@@ -41,6 +42,7 @@ export default async function PublicLayout({ children, params }: { children: Rea
               <li><a href={`/${lang}/jobs`}>{t(lang, 'nav.jobs')}</a></li>
             </ul>
           </nav>
+          <Attribution lang={lang} />
         </footer>
       </body>
     </html>

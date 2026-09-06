@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { staffApi, setStaffToken, staffToken, errorMessage } from '@/lib/ui/client-api';
 import { Field } from '@/components/ui';
+import { Attribution } from '@/components/Attribution';
 import { Status, useStaffI18n, LanguageToggle } from '@/components/staff/Shell';
 
 // Platform operator: create organizations, flags, health (F01, F28)
@@ -50,6 +51,7 @@ export default function Platform() {
           </div>
         )}
       </main>
+      <footer className="max-w-7xl mx-auto px-4 py-6"><Attribution lang={i18n.lang} /></footer>
     </>
   );
 }

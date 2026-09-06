@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { staffApi, setStaffToken, staffToken } from '@/lib/ui/client-api';
 import { ts, StaffKey, label as labelOf, readStaffLang, writeStaffLang, fmt } from '@/lib/i18n/staff';
 import { Locale } from '@/types/shared';
+import { Attribution } from '@/components/Attribution';
 
 export interface Me { kind: string; userId: string; tenantId: string; roles: string[]; displayName: string; language: string; email: string; org: { name: string; slug: string; timeZone: string; languages: Array<{ code: 'en' | 'fr'; required: boolean }>; settings: Record<string, unknown>; featureFlags: Record<string, boolean> }; users: Array<{ userId: string; displayName: string; roles: string[]; status: string }>; }
 
@@ -106,6 +107,7 @@ export function Shell({ children, title }: { children: (me: Me, i18n: I18n) => R
         {error ? <p role="alert" className="field-error">{error}</p> : null}
         {me ? children(me, i18n) : <p role="status">{t('loading')}</p>}
       </main>
+      <footer className="max-w-7xl mx-auto px-4 py-6"><Attribution lang={i18n.lang} /></footer>
     </I18nContext.Provider>
   );
 }

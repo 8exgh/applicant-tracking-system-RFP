@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { staffApi, errorMessage } from '@/lib/ui/client-api';
 import { ErrorSummary, Field } from '@/components/ui';
+import { Attribution } from '@/components/Attribution';
 import { useStaffI18n, LanguageToggle, I18n } from '@/components/staff/Shell';
 
 function InviteForm({ i18n }: { i18n: I18n }) {
@@ -38,6 +39,7 @@ export default function AcceptInvite() {
         <div className="flex justify-between items-start"><h1 className="text-2xl font-bold mb-4">{i18n.t('invite.title')}</h1><LanguageToggle i18n={i18n} /></div>
         <Suspense fallback={null}><InviteForm i18n={i18n} /></Suspense>
       </main>
+      <footer className="max-w-7xl mx-auto px-4 py-6"><Attribution lang={i18n.lang} /></footer>
     </>
   );
 }
